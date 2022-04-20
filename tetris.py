@@ -33,14 +33,13 @@ class PieceShape(object):
     
     def rotate(self, rotation: Rotation):
         new_points = set()
-        if rotation == Rotation.CW:
-            # rotate clockwise
+        if rotation == Rotation.CCW:
             for point in self.points:
                 new_points.add((point[1], self.size - 1 - point[0]))
 
             return PieceShape(self.size, new_points)
 
-        elif rotation == Rotation.CCW:
+        elif rotation == Rotation.CW:
             # rotate counterclockwise
             for point in self.points:
                 new_points.add((self.size - 1 - point[1], point[0]))
@@ -55,6 +54,9 @@ class PieceType(object):
     def print(self):
         print(PieceColor.ansi_code(self.color.value))
         self.shape.print()
+    
+    def rotate(self, rotation: Rotation):
+        return PieceType(self.color, self.shape.rotate(rotation))
 
 pieces = [
     PieceType(PieceColor.YELLOW, PieceShape(2, {(0, 0), (0, 1), (1, 0), (1, 1)})),
@@ -67,4 +69,5 @@ pieces = [
 ]
 
 for piece in pieces:
+    piece.rotate(Rotation.CCW).print()
     piece.print()
