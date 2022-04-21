@@ -49,17 +49,19 @@ class PieceShape(object):
             return PieceShape(self.size, new_points)
 
 class Piece(object):
-    def __init__(self, color: PieceColor, shape: PieceShape, name: str = "No name"):
+    def __init__(self, color: PieceColor, shape: PieceShape, name: str = "No name", original_orientation = None):
         self.color = color
         self.shape = shape
         self.name = name
+        if original_orientation == None:
+            self.original_orientation = self
 
     def print(self):
         print(PieceColor.ansi_code(self.color.value))
         self.shape.print()
     
     def rotate(self, rotation: Rotation):
-        return Piece(self.color, self.shape.rotate(rotation), self.name)
+        return Piece(self.color, self.shape.rotate(rotation), self.name, self.original_orientation)
 
 DEFAULT_PIECES = {
     "O": Piece(PieceColor.YELLOW, PieceShape(2, {(0, 0), (0, 1), (1, 0), (1, 1)})),

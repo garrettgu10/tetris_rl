@@ -17,7 +17,7 @@ class Board(object):
             if px < 0 or px >= 10 or py < 0 or py >= 40:
                 return True
             
-            if self.board[py][px][0] != PieceColor.EMPTY:
+            if self.board[py][px] != PieceColor.EMPTY:
                 return True
         return False
 
@@ -44,14 +44,17 @@ class Game(object):
         self.bag = deque()
         self._refill_bag()
 
-        self.set_curr_piece(self._next_piece())
+        self._set_curr_piece(self._next_piece())
 
         self.swap_piece = None
+        self.can_swap = True
         self.game_over = False
     
     def _refill_bag(self):
         while len(self.bag) <= len(DEFAULT_PIECES.keys()):
-            self.bag.append(random.shuffle(list(DEFAULT_PIECES.values())))
+            new_bag = list(DEFAULT_PIECES.values())
+            random.shuffle(new_bag)
+            self.bag.extend(new_bag)
     
     def _next_piece(self) -> Piece:
         self._refill_bag()
@@ -60,8 +63,8 @@ class Game(object):
     # spawns the current piece at the top of the board
     def _set_curr_piece(self, piece: Piece):
         self.curr_piece = piece
-        self.curr_piece_x = 5 - (piece.size + 1) // 2
-        self.curr_piece_y = 20 if piece.size == 2 else 19
+        self.curr_piece_x = 5 - (piece.shape.size + 1) // 2
+        self.curr_piece_y = 18 if piece.shape.size == 2 else 17
         self.curr_piece_rotation = 0
 
         if self.board.check_collision(self.curr_piece, self.curr_piece_x, self.curr_piece_y):
@@ -104,8 +107,34 @@ class Game(object):
 
         self.board.freeze(self.curr_piece, self.curr_piece_x, self.curr_piece_y)
         self.board.clear_lines()
-        self.set_curr_piece(self._next_piece())
+        self._set_curr_piece(self._next_piece())
+        self.can_swap = True
+    
+    def swap(self) -> bool:
+        if not self.can_swap:
+            return False
+        if self.swap_piece == None:
+            return False
+        new_piece = self.swap_piece
+        self.swap_piece = self.curr_piece.original_orientation
+        self._set_curr_piece(new_piece)
+        self.can_swap = False
+    
+    def print_game_state(self):
+        board = [row[:] for row in self.board.board]
+        
+        for point in self.curr_piece.shape.points:
+            px = self.curr_piece_x + point[0]
+            py = self.curr_piece_y + point[1]
+            board[py][px] = self.curr_piece.color
+        
+        if self.swap_piece != None:
+            print("Swap piece: " + self.swap_piece.name)
+        
+        print("Next pieces: " + " ".join([self.bag[i].name for i in range(5)]))
 
-for piece in DEFAULT_PIECES.values():
-    piece.rotate(Rotation.CCW).print()
-    piece.print()
+        for i in range(19, -1, -1):
+            row = board[i]
+            for col in row:
+                print(PieceColor.ansi_code(col.value) + "**", end=" ")
+            print()
