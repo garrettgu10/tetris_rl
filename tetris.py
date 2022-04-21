@@ -1,80 +1,9 @@
 from __future__ import annotations
-import enum
 import random
-from typing import List, Tuple, Set
 from collections import deque
 
-class PieceColor(enum.Enum):
-    YELLOW = 93
-    CYAN = 36
-    PURPLE = 35
-    ORANGE = 33
-    BLUE = 34
-    GREEN = 32
-    RED = 31
-    EMPTY = 0
-
-    def ansi_code(color: int) -> str:
-        return f"\033[{color}m"
-
-class Rotation(enum.Enum):
-    CW = 0
-    CCW = 1
-
-class PieceShape(object):
-    def __init__(self, size: int, points: Set[Tuple[int, int]]):
-        self.size = size
-        self.points = points
-    
-    def print(self):
-        for y in range(self.size):
-            for x in range(self.size):
-                if (x, y) in self.points:
-                    print("*", end="")
-                else:
-                    print("-", end="")
-            print()
-    
-    def rotate(self, rotation: Rotation) -> PieceShape:
-        new_points = set()
-        if rotation == Rotation.CCW:
-            for point in self.points:
-                new_points.add((point[1], self.size - 1 - point[0]))
-
-            return PieceShape(self.size, new_points)
-
-        elif rotation == Rotation.CW:
-            # rotate counterclockwise
-            for point in self.points:
-                new_points.add((self.size - 1 - point[1], point[0]))
-            
-            return PieceShape(self.size, new_points)
-
-class Piece(object):
-    def __init__(self, color: PieceColor, shape: PieceShape, name: str = "No name"):
-        self.color = color
-        self.shape = shape
-        self.name = name
-
-    def print(self):
-        print(PieceColor.ansi_code(self.color.value))
-        self.shape.print()
-    
-    def rotate(self, rotation: Rotation):
-        return Piece(self.color, self.shape.rotate(rotation), self.name)
-
-default_pieces = {
-    "O": Piece(PieceColor.YELLOW, PieceShape(2, {(0, 0), (0, 1), (1, 0), (1, 1)})),
-    "I": Piece(PieceColor.CYAN, PieceShape(4, {(0, 2), (1, 2), (2, 2), (3, 2)})),
-    "T": Piece(PieceColor.PURPLE, PieceShape(3, {(0, 1), (1, 1), (2, 1), (1, 2)})),
-    "L": Piece(PieceColor.ORANGE, PieceShape(3, {(0, 1), (1, 1), (2, 1), (2, 2)})),
-    "J": Piece(PieceColor.BLUE, PieceShape(3, {(0, 1), (1, 1), (2, 1), (0, 2)})),
-    "S": Piece(PieceColor.GREEN, PieceShape(3, {(0, 1), (1, 1), (1, 2), (2, 2)})),
-    "Z": Piece(PieceColor.RED, PieceShape(3, {(0, 2), (1, 2), (1, 1), (2, 1)})),
-}
-
-for piece_name in default_pieces.keys():
-    default_pieces[piece_name].name = piece_name
+from piece import Rotation, PieceColor, Piece, DEFAULT_PIECES
+from wallkick import get_wallkicks
 
 #represents only the matrix, not next pieces, swap pieces, current piece
 class Board(object):
@@ -98,6 +27,16 @@ class Board(object):
             px = x + point[0]
             py = y + point[1]
             self.board[py][px] = piece.color
+    
+    def clear_lines(self) -> int:
+        lines_cleared = 0
+        for y in range(40):
+            if all(self.board[y][x][0] != PieceColor.EMPTY for x in range(10)):
+                for y2 in range(y, 0, -1):
+                    self.board[y2] = self.board[y2 - 1]
+                self.board[0] = [PieceColor.EMPTY] * 10
+                lines_cleared += 1
+        return lines_cleared
 
 class Game(object):
     def __init__(self):
@@ -111,21 +50,62 @@ class Game(object):
         self.game_over = False
     
     def _refill_bag(self):
-        while len(self.bag) <= len(default_pieces.keys()):
-            self.bag.append(random.shuffle(list(default_pieces.values())))
+        while len(self.bag) <= len(DEFAULT_PIECES.keys()):
+            self.bag.append(random.shuffle(list(DEFAULT_PIECES.values())))
     
     def _next_piece(self) -> Piece:
         self._refill_bag()
         return self.bag.popleft()
 
+    # spawns the current piece at the top of the board
     def _set_curr_piece(self, piece: Piece):
         self.curr_piece = piece
         self.curr_piece_x = 5 - (piece.size + 1) // 2
         self.curr_piece_y = 20 if piece.size == 2 else 19
+        self.curr_piece_rotation = 0
 
         if self.board.check_collision(self.curr_piece, self.curr_piece_x, self.curr_piece_y):
             self.game_over = True
+    
+    def rotate(self, rotation: Rotation) -> bool:
+        if self.game_over:
+            print("game over")
+            return False
 
-for piece in default_pieces.values():
+        wallkicks = get_wallkicks(self.curr_piece.shape, rotation, self.curr_piece_rotation)
+        
+        new_piece = self.curr_piece.rotate(rotation)
+        new_rotation = (self.curr_piece_rotation + 4 + rotation.value) % 4
+        
+        for wallkick in wallkicks[new_rotation]:
+            if not self.board.check_collision(new_piece, self.curr_piece_x + wallkick[0], self.curr_piece_y + wallkick[1]):
+                self.curr_piece_x += wallkick[0]
+                self.curr_piece_y += wallkick[1]
+                self.curr_piece_rotation = new_rotation
+                self.curr_piece = new_piece
+                return True
+
+        return False
+    
+    def move(self, dx: int, dy:int) -> bool:
+        if self.game_over:
+            print("game over")
+            return False
+
+        if not self.board.check_collision(self.curr_piece, self.curr_piece_x + dx, self.curr_piece_y + dy):
+            self.curr_piece_x += dx
+            self.curr_piece_y += dy
+            return True
+        return False
+    
+    def hard_drop(self):
+        while self.move(0, 1):
+            pass
+
+        self.board.freeze(self.curr_piece, self.curr_piece_x, self.curr_piece_y)
+        self.board.clear_lines()
+        self.set_curr_piece(self._next_piece())
+
+for piece in DEFAULT_PIECES.values():
     piece.rotate(Rotation.CCW).print()
     piece.print()
