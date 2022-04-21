@@ -30,11 +30,11 @@ class Board(object):
     
     def clear_lines(self) -> int:
         lines_cleared = 0
-        for y in range(40):
-            if all(self.board[y][x][0] != PieceColor.EMPTY for x in range(10)):
-                for y2 in range(y, 0, -1):
-                    self.board[y2] = self.board[y2 - 1]
-                self.board[0] = [PieceColor.EMPTY] * 10
+        for y in range(39, -1, -1):
+            if all(self.board[y][x] != PieceColor.EMPTY for x in range(10)):
+                for y2 in range(y, 39):
+                    self.board[y2] = self.board[y2 + 1]
+                self.board[39] = [PieceColor.EMPTY] * 10
                 lines_cleared += 1
         return lines_cleared
 
@@ -75,12 +75,12 @@ class Game(object):
             print("game over")
             return False
 
-        wallkicks = get_wallkicks(self.curr_piece.shape, rotation, self.curr_piece_rotation)
+        wallkicks = get_wallkicks(self.curr_piece, rotation, self.curr_piece_rotation)
         
         new_piece = self.curr_piece.rotate(rotation)
         new_rotation = (self.curr_piece_rotation + 4 + rotation.value) % 4
         
-        for wallkick in wallkicks[new_rotation]:
+        for wallkick in wallkicks:
             if not self.board.check_collision(new_piece, self.curr_piece_x + wallkick[0], self.curr_piece_y + wallkick[1]):
                 self.curr_piece_x += wallkick[0]
                 self.curr_piece_y += wallkick[1]
@@ -102,7 +102,7 @@ class Game(object):
         return False
     
     def hard_drop(self):
-        while self.move(0, 1):
+        while self.move(0, -1):
             pass
 
         self.board.freeze(self.curr_piece, self.curr_piece_x, self.curr_piece_y)
@@ -114,11 +114,16 @@ class Game(object):
         if not self.can_swap:
             return False
         if self.swap_piece == None:
+            self.swap_piece = self.curr_piece.original_orientation
+            self._set_curr_piece(self._next_piece())
+            self.can_swap = False
             return False
+        
         new_piece = self.swap_piece
         self.swap_piece = self.curr_piece.original_orientation
         self._set_curr_piece(new_piece)
         self.can_swap = False
+        return True
     
     def print_game_state(self):
         board = [row[:] for row in self.board.board]
