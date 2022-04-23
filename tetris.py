@@ -3,6 +3,7 @@ import random
 from collections import deque
 
 from piece import Rotation, PieceColor, Piece, DEFAULT_PIECES
+from scorer import Scorer
 from wallkick import get_wallkicks
 
 #represents only the matrix, not next pieces, swap pieces, current piece
@@ -37,9 +38,16 @@ class Board(object):
                 self.board[39] = [PieceColor.EMPTY] * 10
                 lines_cleared += 1
         return lines_cleared
+    
+    def is_empty(self):
+        return all(self.board[y][x] == PieceColor.EMPTY for x in range(10) for y in range(40))
 
 class Game(object):
-    def __init__(self):
+    def __init__(self, scorer = Scorer(), seed = random.random()):
+        if seed == None:
+            seed = random.random()
+        self.random = random.Random(seed)
+
         self.board = Board()
         self.bag = deque()
         self._refill_bag()
@@ -49,11 +57,15 @@ class Game(object):
         self.swap_piece = None
         self.can_swap = True
         self.game_over = False
+
+        if scorer == None:
+            scorer = Scorer()
+        self.scorer = scorer
     
     def _refill_bag(self):
         while len(self.bag) <= len(DEFAULT_PIECES.keys()):
             new_bag = list(DEFAULT_PIECES.values())
-            random.shuffle(new_bag)
+            self.random.shuffle(new_bag)
             self.bag.extend(new_bag)
     
     def _next_piece(self) -> Piece:
@@ -101,14 +113,38 @@ class Game(object):
             return True
         return False
     
-    def hard_drop(self):
+    #must be done before freezing piece in place
+    def is_tspin(self):
+        curr_piece = self.curr_piece
+
+        if curr_piece.name != "T":
+            return False
+
+        x = self.curr_piece_x
+        y = self.curr_piece_y
+        board = self.board
+
+        for dx in [-1, 1]:
+            for dy in [-1, 1]:
+                if not board.check_collision(curr_piece, x + dx, y + dy):
+                    return False
+        
+        return True
+    
+    def hard_drop(self) -> float:
         while self.move(0, -1):
             pass
 
+        is_tspin = self.is_tspin()
+
         self.board.freeze(self.curr_piece, self.curr_piece_x, self.curr_piece_y)
-        self.board.clear_lines()
+        lines_cleared = self.board.clear_lines()
         self._set_curr_piece(self._next_piece())
         self.can_swap = True
+
+        is_pclear = self.board.is_empty()
+
+        return self.scorer.score_drop(lines_cleared, is_tspin, is_pclear)
     
     def swap(self) -> bool:
         if not self.can_swap:
@@ -141,5 +177,5 @@ class Game(object):
         for i in range(19, -1, -1):
             row = board[i]
             for col in row:
-                print(PieceColor.ansi_code(col.value) + "**", end=" ")
+                print(PieceColor.ansi_code(PieceColor(col.value)) + "**", end=" ")
             print()

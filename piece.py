@@ -3,17 +3,26 @@ import enum
 from typing import Tuple, Set
 
 class PieceColor(enum.Enum):
-    YELLOW = 93
-    CYAN = 36
-    PURPLE = 35
-    ORANGE = 33
-    BLUE = 34
-    GREEN = 32
-    RED = 31
+    YELLOW = 7
+    CYAN = 6
+    PURPLE = 5
+    ORANGE = 4
+    BLUE = 3
+    GREEN = 2
+    RED = 1
     EMPTY = 0
 
-    def ansi_code(color: int) -> str:
-        return f"\033[{color}m"
+    def ansi_code(color: PieceColor) -> str:
+        return {
+            PieceColor.YELLOW: '\033[93m',
+            PieceColor.CYAN: '\033[36m',
+            PieceColor.PURPLE: '\033[35m',
+            PieceColor.ORANGE: '\033[33m',
+            PieceColor.BLUE: '\033[34m',
+            PieceColor.GREEN: '\033[32m',
+            PieceColor.RED: '\033[31m',
+            PieceColor.EMPTY: '\033[0m'
+        }[color]
 
 class Rotation(enum.Enum):
     CW = 1
@@ -74,5 +83,10 @@ DEFAULT_PIECES = {
     "Z": Piece(PieceColor.RED, PieceShape(3, {(0, 2), (1, 2), (1, 1), (2, 1)})),
 }
 
+DEFAULT_PIECES_BY_COLOR = {}
+
 for piece_name in DEFAULT_PIECES.keys():
     DEFAULT_PIECES[piece_name].name = piece_name
+
+for piece_name in DEFAULT_PIECES.keys():
+    DEFAULT_PIECES_BY_COLOR[DEFAULT_PIECES[piece_name].color] = DEFAULT_PIECES[piece_name]
