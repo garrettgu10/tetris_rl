@@ -47,7 +47,7 @@ class TetrisEnv(Env):
 
     def reset(self, seed = None, return_info = False, options = None):
         self.game = Game(Scorer(), seed=seed)
-        info = None
+        info = {}
         observation = game_to_observation(self.game)
 
         return (observation, info) if return_info else observation
@@ -56,7 +56,7 @@ class TetrisEnv(Env):
         reward = do_action(self.game, action)
         observation = game_to_observation(self.game)
         done = self.game.game_over
-        info = None
+        info = {}
 
         return (observation, reward, done, info)
     
