@@ -23,6 +23,18 @@ class PieceColor(enum.Enum):
             PieceColor.RED: '\033[31m',
             PieceColor.EMPTY: '\033[0m'
         }[color]
+    
+    def rgb_code(color: PieceColor) -> Tuple[int, int, int]:
+        return {
+            PieceColor.YELLOW: (255, 255, 0),
+            PieceColor.CYAN: (0, 255, 255),
+            PieceColor.PURPLE: (255, 0, 255),
+            PieceColor.ORANGE: (255, 165, 0),
+            PieceColor.BLUE: (0, 0, 255),
+            PieceColor.GREEN: (0, 255, 0),
+            PieceColor.RED: (255, 0, 0),
+            PieceColor.EMPTY: (0, 0, 0)
+        }[color]
 
 class Rotation(enum.Enum):
     CW = 1
