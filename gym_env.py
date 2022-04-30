@@ -10,7 +10,7 @@ IDLE_REWARD = -0.01
 INVALID_MOVE_REWARD = -10
 
 def do_action(game: Game, action: int) -> float:
-    if action == 0:
+    if action == 7:
         return 0 if game.swap() else INVALID_MOVE_REWARD
     elif action == 1:
         return IDLE_REWARD if game.move(-1, 0) else INVALID_MOVE_REWARD
@@ -24,6 +24,7 @@ def do_action(game: Game, action: int) -> float:
         return IDLE_REWARD if game.rotate(Rotation.CW) else INVALID_MOVE_REWARD
     elif action == 6:
         return game.hard_drop()
+    return INVALID_MOVE_REWARD
 
 class TetrisEnv(Env):
     def __init__(self):
@@ -38,7 +39,7 @@ class TetrisEnv(Env):
             }
         )
 
-        self.action_space = spaces.Discrete(7)
+        self.action_space = spaces.Discrete(8)
         self.window = None
         self.clock = None
 
@@ -109,6 +110,11 @@ class TetrisEnv(Env):
             pygame.display.flip()
             pygame.event.pump()
             self.clock.tick(60)
+
+        if mode == "rgb_array":
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
+            )
     
     def close(self):
         if self.window is not None:
