@@ -1,4 +1,3 @@
-from __future__ import annotations
 import enum
 from typing import Tuple, Set
 
@@ -12,7 +11,7 @@ class PieceColor(enum.Enum):
     RED = 1
     EMPTY = 0
 
-    def ansi_code(color: PieceColor) -> str:
+    def ansi_code(color) -> str:
         return {
             PieceColor.YELLOW: '\033[93m',
             PieceColor.CYAN: '\033[36m',
@@ -24,7 +23,7 @@ class PieceColor(enum.Enum):
             PieceColor.EMPTY: '\033[0m'
         }[color]
     
-    def rgb_code(color: PieceColor) -> Tuple[int, int, int]:
+    def rgb_code(color) -> Tuple[int, int, int]:
         return {
             PieceColor.YELLOW: (255, 255, 0),
             PieceColor.CYAN: (0, 255, 255),
@@ -54,7 +53,7 @@ class PieceShape(object):
                     print("-", end="")
             print()
     
-    def rotate(self, rotation: Rotation) -> PieceShape:
+    def rotate(self, rotation: Rotation): #returns PieceShape
         new_points = set()
         if rotation == Rotation.CW:
             for point in self.points:
