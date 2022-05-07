@@ -4,6 +4,7 @@ from collections import deque
 from piece import Rotation, PieceColor, Piece, DEFAULT_PIECES
 from scorer import Scorer
 from wallkick import get_wallkicks
+from typing import List, Set, Tuple
 
 #represents only the matrix, not next pieces, swap pieces, current piece
 class Board(object):
@@ -38,6 +39,49 @@ class Board(object):
                 lines_cleared += 1
         return lines_cleared
     
+    def find_possible_positions(self, piece: Piece, startx: int, starty: int, start_rotation: int) -> Set[Tuple[int, int, int]]:
+        orientations = piece.get_rotations()
+        
+        visited = set()
+        queue = deque([(startx, starty, start_rotation)])
+        res = set()
+        while queue:
+            x, y, orientation_index = queue.popleft()
+            orientation = orientations[orientation_index]
+            if (x, y, orientation_index) in visited:
+                continue
+            visited.add((x, y, orientation_index))
+            
+            #move left
+            if not self.check_collision(orientation, x - 1, y):
+                queue.append((x - 1, y, orientation_index))
+            #move right
+            if not self.check_collision(orientation, x + 1, y):
+                queue.append((x + 1, y, orientation_index))
+
+            #rotate left
+            new_orientation_index = (orientation_index + 3) % 4
+            new_orientation = orientations[new_orientation_index]
+            if not self.check_collision(new_orientation, x, y):
+                queue.append((x, y, new_orientation_index))
+            
+            #rotate right
+            new_orientation_index = (orientation_index + 1) % 4
+            new_orientation = orientations[new_orientation_index]
+            if not self.check_collision(new_orientation, x, y):
+                queue.append((x, y, new_orientation_index))
+            
+            #move all the way down
+            newy = y - 1
+            while not self.check_collision(orientation, x, newy):
+                newy -= 1
+            newy += 1
+            
+            res.add((x, newy, orientation_index)) #hard drop
+            queue.append((x, newy, orientation_index)) #soft drop
+        
+        return list(res)
+    
     def is_empty(self):
         return all(self.board[y][x] == PieceColor.EMPTY for x in range(10) for y in range(40))
 
@@ -64,7 +108,9 @@ class Game(object):
         if scorer == None:
             scorer = Scorer()
         self.scorer = scorer
-    
+
+        self.lines_completed_by_last_drop = 0
+
     def _refill_bag(self):
         while len(self.bag) <= len(DEFAULT_PIECES.keys()):
             new_bag = list(DEFAULT_PIECES.values())
@@ -84,6 +130,12 @@ class Game(object):
 
         if self.board.check_collision(self.curr_piece, self.curr_piece_x, self.curr_piece_y):
             self.game_over = True
+        
+    def set_curr_position(self, x: int, y: int, orientation: int):
+        self.curr_piece_x = x
+        self.curr_piece_y = y
+        self.curr_piece_rotation = orientation
+        self.curr_piece = self.curr_piece.get_rotations()[orientation]
     
     def rotate(self, rotation: Rotation) -> bool:
         if self.game_over:
@@ -142,6 +194,8 @@ class Game(object):
         lines_cleared = self.board.clear_lines()
         self._set_curr_piece(self._next_piece())
         self.can_swap = True
+
+        self.lines_completed_by_last_drop = lines_cleared
 
         is_pclear = self.board.is_empty()
 

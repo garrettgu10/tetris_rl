@@ -24,7 +24,7 @@ class NoisyCrossEntropyModel():
         done, score = False, 0
 
         while not done:
-            action = self.heuristic.predict(state, weight_vector)
+            action = self.heuristic.predict(weight_vector, state)
             state, rewards, done, _ = self.env.step(action)
             score += rewards
 

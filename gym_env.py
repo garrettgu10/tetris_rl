@@ -36,6 +36,7 @@ class TetrisEnv(Env):
                 "piece_position": spaces.Box(0, 40, (2,), dtype=int),
                 "can_swap": spaces.Box(0, 1, (1,), dtype=int),
                 "upcoming_pieces": spaces.Box(1, 7, (4,), dtype=int),
+                "lines_completed": spaces.Discrete(10), #lines cleared by the last action
             }
         )
 
@@ -145,5 +146,6 @@ def game_to_observation(game: Game):
         "piece": piece,
         "piece_position": piece_position,
         "can_swap": can_swap,
-        "upcoming_pieces": upcoming_pieces_array
+        "upcoming_pieces": upcoming_pieces_array,
+        "lines_completed": game.lines_completed_by_last_drop,
     }

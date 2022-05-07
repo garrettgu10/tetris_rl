@@ -83,6 +83,12 @@ class Piece(object):
     
     def rotate(self, rotation: Rotation):
         return Piece(self.color, self.shape.rotate(rotation), self.name, self.original_orientation)
+    
+    def get_rotations(self):
+        rotations = [self.original_orientation]
+        for i in range(3):
+            rotations.append(rotations[-1].rotate(Rotation.CW))
+        return rotations
 
 DEFAULT_PIECES = {
     "O": Piece(PieceColor.YELLOW, PieceShape(2, {(0, 0), (0, 1), (1, 0), (1, 1)})),
