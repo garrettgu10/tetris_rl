@@ -6,7 +6,7 @@ from piece import PieceColor, Rotation
 import numpy as np
 import pygame
 
-IDLE_REWARD = -0.01
+IDLE_REWARD = -0.1
 INVALID_MOVE_REWARD = -10
 
 def do_action(game: Game, action: int) -> float:

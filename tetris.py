@@ -41,6 +41,8 @@ class Board(object):
     def is_empty(self):
         return all(self.board[y][x] == PieceColor.EMPTY for x in range(10) for y in range(40))
 
+PIECE_LIMIT = 200
+
 class Game(object):
     def __init__(self, scorer = Scorer(), seed = random.random()):
         if seed == None:
@@ -56,6 +58,8 @@ class Game(object):
         self.swap_piece = None
         self.can_swap = True
         self.game_over = False
+        
+        self.remaining_pieces = PIECE_LIMIT
 
         if scorer == None:
             scorer = Scorer()
@@ -83,7 +87,6 @@ class Game(object):
     
     def rotate(self, rotation: Rotation) -> bool:
         if self.game_over:
-            print("game over")
             return False
 
         wallkicks = get_wallkicks(self.curr_piece, rotation, self.curr_piece_rotation)
@@ -103,7 +106,6 @@ class Game(object):
     
     def move(self, dx: int, dy:int) -> bool:
         if self.game_over:
-            print("game over")
             return False
 
         if not self.board.check_collision(self.curr_piece, self.curr_piece_x + dx, self.curr_piece_y + dy):
@@ -142,6 +144,10 @@ class Game(object):
         self.can_swap = True
 
         is_pclear = self.board.is_empty()
+
+        self.remaining_pieces -= 1
+        if self.remaining_pieces == 0:
+            self.game_over = True
 
         return self.scorer.score_drop(lines_cleared, is_tspin, is_pclear)
     

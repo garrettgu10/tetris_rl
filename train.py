@@ -1,6 +1,6 @@
 import gym
 
-from stable_baselines.common.policies import CnnPolicy
+from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines import DQN
 
 from gym.wrappers import FlattenObservation
@@ -8,8 +8,8 @@ from gym_env import TetrisEnv
 
 env = FlattenObservation(TetrisEnv())
 
-model = DQN(CnnPolicy, env, verbose=1)
-model.learn(total_timesteps=100000)
+model = DQN(MlpPolicy, env, verbose=1)
+model.learn(total_timesteps=2500)
 model.save("dqn_tetris")
 
 obs = env.reset()
