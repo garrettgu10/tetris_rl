@@ -80,7 +80,7 @@ class Board(object):
             res.add((x, newy, orientation_index)) #hard drop
             queue.append((x, newy, orientation_index)) #soft drop
         
-        return list(res)
+        return sorted(list(res))
     
     def is_empty(self):
         return all(self.board[y][x] == PieceColor.EMPTY for x in range(10) for y in range(40))
