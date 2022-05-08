@@ -23,6 +23,6 @@ def test_individual():
     assert np.linalg.norm(prev_weights - new_weights) <= 0.2
 
 if __name__ == '__main__':
-    test_individual()
-    test_ga()
+    # test_individual()
+    # test_ga()
     test_nce()

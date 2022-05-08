@@ -77,7 +77,8 @@ class Board(object):
                 newy -= 1
             newy += 1
             
-            res.add((x, newy, orientation_index)) #hard drop
+            if not self.check_collision(orientation, x, newy):
+                res.add((x, newy, orientation_index)) #hard drop
             queue.append((x, newy, orientation_index)) #soft drop
         
         return sorted(list(res))
