@@ -2,6 +2,13 @@ import imp
 from multiprocessing import Queue, Process
 from heuristic import simulate_game
 
+class SimArgs():
+    def __init__(self, num_games, max_pieces, heuristic) -> None:
+        self.num_games = num_games
+        self.max_pieces = max_pieces
+        self.heuristic = heuristic
+        
+
 def start_processes(num_processes, process_function, args):
     processes = []
     for _ in range(num_processes):
@@ -35,15 +42,15 @@ def prep_sim(chromosomes, num_processes):
 
     return chromosomes, modified
 
-def process_function_ga(chromosomes, modified):
+def process_function(chromosomes, modified, args):
     while True:
         c = chromosomes.get()
         if c == 'DONE':
             break
         
         c.fitness = 0
-        for game in range(c.num_games):
-                score = simulate_game(c.weights, c.heuristic, c.max_pieces)
+        for game in range(args.num_games):
+                score = simulate_game(c.weights, args.heuristic, args.max_pieces)
                 c.fitness += score
         modified.put(c)
 

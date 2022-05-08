@@ -5,13 +5,13 @@ from heuristic import TetrisHeuristic
 
 def test_ga():
     ga_model = GeneticAlgoModel(pop_size=20, verbose=True, heuristic=TetrisHeuristic())
-    ga_model.train(num_generations=3, num_games=5, max_pieces=10)
-    # ga_model.play_game()
+    ga_model.train(num_generations=3, num_games=5, max_pieces=10, num_processes=2)
+    ga_model.play_game()
 
 def test_nce():
-    nce_model = NoisyCrossEntropyModel(N=10, rho=.1, noise_type='constant', verbose=True, heuristic=TetrisHeuristic())
-    nce_model.train(games=1, episodes=2)
-    # nce_model.play_game()
+    nce_model = NoisyCrossEntropyModel(N=100, rho=.1, noise_type='constant', verbose=True, heuristic=TetrisHeuristic())
+    nce_model.train(games=1, episodes=3, max_pieces=500, num_processes=16)
+    nce_model.play_game()
 
 def test_individual():
     i = Individual(4)

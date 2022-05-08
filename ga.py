@@ -2,6 +2,9 @@ import numpy as np
 from numpy import random as rand
 from heuristic import TetrisHeuristic, simulate_game
 import pickle
+from process_util import prep_sim, start_processes, end_processes, process_function, SimArgs
+import time
+from datetime import timedelta
 
 class Individual():
     def __init__(self, num_weights) -> None:
@@ -67,24 +70,36 @@ class GeneticAlgoModel():
             child = self.cross_over(first, second)
             self.children.append(child)
 
-    def calc_fitness(self, num_games, max_pieces):
-        for individual in self.population:
-            individual.fitness = 0
-            for _ in range(num_games):
-                score = simulate_game(individual.weights, self.heuristic, max_pieces)
-                individual.fitness += score
-
-    def sim_generation(self, num_games, max_pieces):
-        self.calc_fitness(num_games, max_pieces)
+    def calc_fitness(self, num_games, max_pieces, num_processes):
+        if num_processes == 1:
+            for individual in self.population:
+                individual.fitness = 0
+                for _ in range(num_games):
+                    score = simulate_game(individual.weights, self.heuristic, max_pieces)
+                    individual.fitness += score
+        else:
+            args = SimArgs(num_games, max_pieces, self.heuristic)
+            chromosomes, modified = prep_sim(self.population, num_processes)
+            processes = start_processes(num_processes, process_function, (chromosomes, modified, args))
+            chromosomes = end_processes(processes, modified, num_processes)
+            self.population = chromosomes
+            
+    def sim_generation(self, num_games, max_pieces, num_processes):
+        self.calc_fitness(num_games, max_pieces, num_processes)
         self.tournament()
         self.mutate()
         self.replace()
         return max([individual.fitness for individual in self.population])
 
-    def train(self, num_generations, num_games, max_pieces):
+    def train(self, num_generations, num_games, max_pieces, num_processes=1):
         for g in range(num_generations):
-            best_fitness = self.sim_generation(num_games, max_pieces)
-            if self.verbose: print(f'Generation {g+1} terminated with best fitness {best_fitness}')
+            start = time.time()
+            best_fitness = self.sim_generation(num_games, max_pieces, num_processes)
+            end = time.time()
+            if self.verbose: 
+                print(f'Generation {g+1} terminated with best fitness {best_fitness}')
+                print(f'Time taken: {timedelta(seconds=end-start)} seconds')
+
 
     def play_game(self):
         self.population.sort(key=lambda individual: individual.fitness)
