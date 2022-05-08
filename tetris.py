@@ -220,6 +220,9 @@ class Game(object):
         self.can_swap = False
         return True
     
+    def find_possible_positions(self):
+        return self.board.find_possible_positions(self.curr_piece, self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation)
+
     def print_game_state(self):
         board = [row[:] for row in self.board.board]
         

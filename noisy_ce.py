@@ -1,10 +1,12 @@
+import pickle
 import numpy as np
 from gym import Env
-from heuristic import TetrisHeuristic
+from tetris import Game
+from heuristic import TetrisHeuristic, simulate_game
+
 
 class NoisyCrossEntropyModel():
-    def __init__(self, env: Env, N: int, rho: float, noise_type: str, verbose: bool, heuristic: TetrisHeuristic) -> None:
-        self.env = env
+    def __init__(self, N: int, rho: float, noise_type: str, verbose: bool, heuristic: TetrisHeuristic) -> None:
         self.N = N
         self.rho = rho
         self.noise_type = noise_type
@@ -18,17 +20,6 @@ class NoisyCrossEntropyModel():
         if self.noise_type=='constant': return 4
         if self.noise_type=='decreasing': return max(5 - episode/10, 0)
         raise NotImplementedError
-
-    def _simulate_game(self, weight_vector):
-        state = self.env.reset()
-        done, score = False, 0
-
-        while not done:
-            action = self.heuristic.predict(weight_vector, state)
-            state, rewards, done, _ = self.env.step(action)
-            score += rewards
-
-        return score
 
     def predict(self, state):
         weight_vector = np.random.normal(self.mu, self.sd)
@@ -48,9 +39,17 @@ class NoisyCrossEntropyModel():
             for weight_idx, weight_vector in enumerate(weights):
                 for game in games:
                     if self.verbose: print(f'Starting game {game} for weight vector {weight_idx}')
-                    scores[weight_idx] += self._simulate_game(weight_vector)
+                    scores[weight_idx] += simulate_game(weight_vector, self.heuristic)
     
             num_selected = int(self.rho * self.N)
             selected = [np.array(weight) for _, weight in sorted(zip(-scores, weights))][:num_selected]
             self.mu = np.mean(selected, axis=0)
             self.sd = np.power(selected - self.mu, 2) / num_selected + self._noise(episode)
+    
+    def play(self):
+        weights = np.random.normal(self.mu, self.sd) 
+        score = simulate_game(weights, self.heuristic, render=True)
+        print('Game terminated with score', score)
+
+    def save(self, save_file):
+        pickle.dump(self, open(save_file, "wb" ))

@@ -1,6 +1,29 @@
-from tetris import Board
-from gym import Env, spaces
+from tetris import Board, Game
+from gym import spaces
 from typing import List
+from time import sleep
+from gym_env import game_to_observation
+
+def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
+    game = Game()
+    score = pieces = 0
+
+    while not game.game_over and pieces < max_pieces:
+        best_pos, best_score = (0, 0, 0), -10e9
+        for position in game.find_possible_positions():
+            if render: 
+                game.print_game_state()
+                sleep(.5)
+            game.set_curr_position(position[0], position[1], position[2])
+            cur_score = heuristic.predict(weight_vector, game_to_observation(game))
+            if cur_score > best_score:
+                best_score = cur_score
+                best_pos = position
+        game.set_curr_position(best_pos[0], best_pos[1], best_pos[2])
+        score += game.hard_drop()
+        pieces += 1
+
+    return score
 
 # trained weights from https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
 # aggregate height: -0.510066
