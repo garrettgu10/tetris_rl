@@ -71,6 +71,9 @@ class GeneticAlgoModel():
             self.children.append(child)
 
     def calc_fitness(self, num_games, max_pieces, num_processes):
+        fresh_blood = sum([individual.fitness < 0 for individual in self.population])
+        assert fresh_blood == self.pop_size or fresh_blood == int(.3 * self.pop_size)
+
         if num_processes == 1:
             for individual in self.population:
                 individual.fitness = 0
@@ -98,7 +101,7 @@ class GeneticAlgoModel():
             end = time.time()
             if self.verbose: 
                 print(f'Generation {g+1} terminated with best fitness {best_fitness}')
-                print(f'Time taken: {timedelta(seconds=end-start)} seconds')
+                print(f'Time taken: {timedelta(seconds=end-start)}')
 
 
     def play_game(self):

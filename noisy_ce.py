@@ -42,6 +42,8 @@ class NoisyCrossEntropyModel():
             for weight_idx, weight_vector in enumerate(weights):
                 assert len(weight_vector) == len(population[weight_idx].weights)
                 population[weight_idx].weights = weight_vector 
+            assert all(map(lambda x: x.fitness < 0, population))
+            
             args = SimArgs(num_games=games, max_pieces=max_pieces, heuristic=self.heuristic)
             chromosomes, modified = prep_sim(population, num_processes)
             processes = start_processes(num_processes, process_function, (chromosomes, modified, args))

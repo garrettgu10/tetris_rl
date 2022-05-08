@@ -10,7 +10,7 @@ def test_ga():
 
 def test_nce():
     nce_model = NoisyCrossEntropyModel(N=100, rho=.1, noise_type='constant', verbose=True, heuristic=TetrisHeuristic())
-    nce_model.train(games=1, episodes=3, max_pieces=500, num_processes=16)
+    nce_model.train(games=1, episodes=2, max_pieces=500, num_processes=16)
     nce_model.play_game()
 
 def test_individual():
@@ -25,4 +25,5 @@ def test_individual():
 if __name__ == '__main__':
     # test_individual()
     # test_ga()
+    np.random.seed(0)
     test_nce()

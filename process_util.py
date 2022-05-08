@@ -48,6 +48,10 @@ def process_function(chromosomes, modified, args):
         if c == 'DONE':
             break
         
+        if c.fitness >= 0:
+            modified.put(c)
+            continue
+
         c.fitness = 0
         for game in range(args.num_games):
                 score = simulate_game(c.weights, args.heuristic, args.max_pieces)
