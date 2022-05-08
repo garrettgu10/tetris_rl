@@ -39,7 +39,7 @@ class Board(object):
                 lines_cleared += 1
         return lines_cleared
     
-    def find_possible_positions(self, piece: Piece, startx: int, starty: int, start_rotation: int) -> Set[Tuple[int, int, int]]:
+    def _find_possible_positions(self, piece: Piece, startx: int, starty: int, start_rotation: int) -> Set[Tuple[int, int, int]]:
         orientations = piece.get_rotations()
         
         visited = set()
@@ -206,6 +206,18 @@ class Game(object):
 
         return self.scorer.score_drop(lines_cleared, is_tspin, is_pclear)
     
+    def find_hard_drop_pos(self) -> Tuple[int, int]:
+        start_x = self.curr_piece_x
+        start_y = self.curr_piece_y
+
+        while self.move(0, -1):
+            pass
+
+        res = (self.curr_piece_x, self.curr_piece_y)
+        self.curr_piece_x = start_x
+        self.curr_piece_y = start_y
+        return res
+    
     def swap(self) -> bool:
         if not self.can_swap:
             return False
@@ -221,8 +233,42 @@ class Game(object):
         self.can_swap = False
         return True
     
-    def find_possible_positions(self):
-        return self.board.find_possible_positions(self.curr_piece, self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation)
+    def find_possible_positions(self) -> List[Tuple[int, int, int]]:
+        start_piece = self.curr_piece
+        start_x = self.curr_piece_x
+        start_y = self.curr_piece_y
+        start_rotation = self.curr_piece_rotation
+
+        visited = set()
+        queue = deque([(start_x, start_y, start_rotation)])
+        res = set()
+
+        while queue:
+            x, y, rotation = queue.popleft()
+            if (x, y, rotation) in visited:
+                continue
+            visited.add((x, y, rotation))
+
+            self.set_curr_position(x, y, rotation)
+
+            for dx, dy in [(0, -1), (-1, 0), (1, 0)]:
+                if self.move(dx, dy):
+                    queue.append((self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation))
+                    self.set_curr_position(x, y, rotation)
+            
+            for move in [Rotation.CCW, Rotation.CW]:
+                if self.rotate(move):
+                    queue.append((self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation))
+                    self.set_curr_position(x, y, rotation)
+            
+            res.add((*self.find_hard_drop_pos(), rotation))
+        
+        # return game to original state
+        self.set_curr_position(start_x, start_y, start_rotation)
+        
+        print(res)
+
+        return sorted(list(res), key=lambda x: (x[2], x[0], x[1]))
 
     def print_game_state(self):
         board = [row[:] for row in self.board.board]

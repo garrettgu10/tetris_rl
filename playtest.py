@@ -13,7 +13,7 @@ while not game.game_over:
     print(HolesScorer().score(observation))
     print(BumpinessScorer().score(observation))
 
-    for position in game.board.find_possible_positions(game.curr_piece, game.curr_piece_x, game.curr_piece_y, game.curr_piece_rotation):
+    for position in game.find_possible_positions():
         game.set_curr_position(position[0], position[1], position[2])
         game.print_game_state()
 
