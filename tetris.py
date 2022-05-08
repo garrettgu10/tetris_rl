@@ -2,7 +2,7 @@ import random
 from collections import deque
 
 from piece import Rotation, PieceColor, Piece, DEFAULT_PIECES
-from scorer import Scorer
+from scorer import Scorer, ModernScorer
 from wallkick import get_wallkicks
 from typing import List, Set, Tuple
 
@@ -88,7 +88,7 @@ class Board(object):
 PIECE_LIMIT = 200
 
 class Game(object):
-    def __init__(self, scorer = Scorer(), seed = random.random()):
+    def __init__(self, scorer = ModernScorer(), seed = random.random()):
         if seed == None:
             seed = random.random()
         self.random = random.Random(seed)
@@ -106,7 +106,7 @@ class Game(object):
         self.remaining_pieces = PIECE_LIMIT
 
         if scorer == None:
-            scorer = Scorer()
+            scorer = ModernScorer()
         self.scorer = scorer
 
         self.lines_completed_by_last_drop = 0

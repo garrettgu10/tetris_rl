@@ -6,10 +6,12 @@ import pickle
 class Individual():
     def __init__(self, num_weights) -> None:
         self.weights = 2 * rand.random(num_weights) - 1
-        self.fitness = -1
+        self.fitness = -10e9
         self.normalize()
 
     def normalize(self):
+        if abs(np.linalg.norm(self.weights)) < .000001:
+            return
         self.weights = self.weights / np.linalg.norm(self.weights)
 
     def set_weights(self, weights):
@@ -42,13 +44,13 @@ class GeneticAlgoModel():
 
     def replace(self):
         self.population.sort(key=lambda i: i.fitness)
-        self.population = self.population[:int(.3 * self.pop_size)]
+        self.population = self.population[int(.3 * self.pop_size):]
         self.population.extend(self.children)
         assert self.pop_size == len(self.population)
 
     def tournament(self):
         self.children = []
-        while len(self.children < int(.3 * self.pop_size)):
+        while len(self.children) < int(.3 * self.pop_size):
             selected = rand.choice(self.population, int(.1 * self.pop_size), replace=False)
 
             first, second = selected[0], selected[1]
@@ -69,7 +71,8 @@ class GeneticAlgoModel():
         for individual in self.population:
             individual.fitness = 0
             for _ in range(num_games):
-                individual.fitness += simulate_game(individual.weights, self.heuristic, max_pieces)
+                score = simulate_game(individual.weights, self.heuristic, max_pieces)
+                individual.fitness += score
 
     def sim_generation(self, num_games, max_pieces):
         self.calc_fitness(num_games, max_pieces)
@@ -78,8 +81,8 @@ class GeneticAlgoModel():
         self.replace()
         return max([individual.fitness for individual in self.population])
 
-    def learn(self, num_generations, num_games, max_pieces):
-        for g in num_generations:
+    def train(self, num_generations, num_games, max_pieces):
+        for g in range(num_generations):
             best_fitness = self.sim_generation(num_games, max_pieces)
             if self.verbose: print(f'Generation {g+1} terminated with best fitness {best_fitness}')
 
