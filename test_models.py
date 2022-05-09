@@ -36,11 +36,12 @@ if __name__ == '__main__':
 
     ga = pickle.load(open('ga.pkl', 'rb'))
     nce = pickle.load(open('nce.pkl', 'rb'))
+    nce2 = pickle.load(open('nce2.pkl', 'rb'))
     beam_heuristic = BeamSearchHeuristic(TetrisHeuristic(), 2, 2, 1000)
     regular_heuristic = TetrisHeuristic()
 
-    model = [ga, nce][test_num % 2]
-    heuristic = [beam_heuristic, regular_heuristic][test_num // 2]
+    model = [ga, nce, nce2][test_num % 3]
+    heuristic = [beam_heuristic, regular_heuristic][test_num // 3]
 
     model.heuristic = heuristic
     score = model.play_game(num_pieces=200)
