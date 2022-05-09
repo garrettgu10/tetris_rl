@@ -25,7 +25,7 @@ class NoisyCrossEntropyModel():
         if self.noise_type=='decreasing': return max(5 - episode/10, 0)
         raise NotImplementedError
 
-    def predict(self, state):
+    def predict(self, state: Game):
         weight_vector = np.random.normal(self.mu, self.sd)
         return self.heuristic.predict(weight_vector, state)
 

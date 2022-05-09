@@ -76,6 +76,9 @@ class Piece(object):
             self.original_orientation = self
         else:
             self.original_orientation = original_orientation
+    
+    def clone(self):
+        return Piece(self.color, self.shape, self.name, self.original_orientation)
 
     def print(self):
         print(PieceColor.ansi_code(self.color.value))

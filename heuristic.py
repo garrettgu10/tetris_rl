@@ -1,4 +1,5 @@
-from tetris import Board, Game
+from collections import deque
+from tetris import Game
 from gym import spaces
 from typing import List
 from time import sleep
@@ -11,8 +12,10 @@ def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
     while not game.game_over and pieces < max_pieces:
         best_pos, best_score = (0, 0, 0), -10e9
         for position in game.find_possible_positions():
-            game.set_curr_position(position[0], position[1], position[2])
-            cur_score = heuristic.predict(weight_vector, game_to_observation(game))
+            newgame = game.clone()
+            newgame.set_curr_position(position[0], position[1], position[2])
+            newgame.hard_drop()
+            cur_score = heuristic.predict(weight_vector, newgame)
             if cur_score > best_score:
                 best_score = cur_score
                 best_pos = position
@@ -48,9 +51,56 @@ class TetrisHeuristic():
     def num_heuristics(self):
         return len(self.scorers)
 
-    def predict(self, weight: List[float], state: spaces.Dict):
+    def predict(self, weight: List[float], game: Game):
         assert len(weight) == self.num_heuristics()
+        state = game_to_observation(game)
         return sum([weight[i] * scorer.score(state) for i, scorer in enumerate(self.scorers)])
+
+class BeamSearchHeuristic():
+    def __init__(self, wrapped_heuristic: TetrisHeuristic, beta: int, depth: int, eval_limit: int) -> None:
+        self.wrapped_heuristic = wrapped_heuristic
+        self.beta = beta
+        self.depth = depth
+        self.eval_limit = eval_limit
+    
+    def predict(self, weight: List[float], game: Game):
+        open_list = deque([(game, 0, 0)])
+        best_score_at_each_depth = [-10e9] * self.depth
+        evaluated_positions = 0
+
+        while open_list:
+            game, score, depth = open_list.popleft()
+
+            best_score_at_each_depth[depth] = max(best_score_at_each_depth[depth], score)
+
+            if evaluated_positions >= self.eval_limit:
+                break
+
+            if depth == self.depth - 1:
+                continue
+
+            eval_limit_exceeded = False
+            
+            neighbors = []
+            for position in game.find_possible_positions():
+                newgame = game.clone()
+                newgame.set_curr_position(position[0], position[1], position[2])
+                drop_score = newgame.hard_drop()
+                drop_score += self.wrapped_heuristic.predict(weight, newgame)
+                neighbors.append((newgame, score + drop_score, depth + 1))
+
+                evaluated_positions += 1
+                if evaluated_positions >= self.eval_limit:
+                    eval_limit_exceeded = True
+            
+            if eval_limit_exceeded:
+                break
+
+            open_list.extend(sorted(neighbors, key=lambda x: x[1], reverse=True)[:self.beta])
+
+        for score in reversed(best_score_at_each_depth):
+            if score > -10e9:
+                return score
 
 def columnHeight(board: spaces.Box, x: int) -> int:
     col_height = 0
