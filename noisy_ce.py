@@ -9,6 +9,12 @@ from process_util import prep_sim, start_processes, end_processes, process_funct
 import time
 from datetime import timedelta
 
+'''
+    This code was implemented by us, but it's based on a paper called
+    "Learning Tetris using the Nosiy Cross-Entropy Method"
+    by Szita and Lorincz. See our paper for a full citation.
+'''
+
 class NoisyCrossEntropyModel():
     def __init__(self, N: int, rho: float, noise_type: str, verbose: bool, heuristic: TetrisHeuristic) -> None:
         self.N = N
