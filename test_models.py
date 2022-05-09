@@ -3,6 +3,7 @@ from ga import GeneticAlgoModel, Individual
 from noisy_ce import NoisyCrossEntropyModel
 from heuristic import TetrisHeuristic, BeamSearchHeuristic
 from heuristic import simulate_game
+import pickle
 
 def test_ga():
     ga_model = GeneticAlgoModel(pop_size=20, verbose=True, heuristic=TetrisHeuristic())
@@ -28,4 +29,8 @@ if __name__ == '__main__':
     # test_ga()
     np.random.seed(0)
     # test_nce()
-    simulate_game([-0.510066, 0.760666, -0.35663, -0.184483, 0, 0, 0, 0, 0], BeamSearchHeuristic(TetrisHeuristic(), 2, 2, 1000), render=True)
+    # print("score: ", simulate_game([-0.510066, 0.760666, -0.35663, -0.184483, 0, 0, 0, 0, 0], BeamSearchHeuristic(TetrisHeuristic(), 2, 3, 1000), render=True))
+
+    ga = pickle.load(open('nce.pkl', 'rb'))
+    ga.heuristic = BeamSearchHeuristic(TetrisHeuristic(), 2, 3, 1000)
+    ga.play_game()

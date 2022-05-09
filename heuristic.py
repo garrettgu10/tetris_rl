@@ -21,9 +21,9 @@ def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
                 best_pos = position
         game.set_curr_position(best_pos[0], best_pos[1], best_pos[2])
         score += game.hard_drop()
+        game.add_cheese(1)
         if render: 
             game.print_game_state()
-            sleep(.5)
         pieces += 1
 
     return score
@@ -62,6 +62,7 @@ class BeamSearchHeuristic():
         self.beta = beta
         self.depth = depth
         self.eval_limit = eval_limit
+        self.gamma = 0.8
     
     def predict(self, weight: List[float], game: Game):
         open_list = deque([(game, 0, 0)])
@@ -92,6 +93,7 @@ class BeamSearchHeuristic():
                 evaluated_positions += 1
                 if evaluated_positions >= self.eval_limit:
                     eval_limit_exceeded = True
+                    break
             
             if eval_limit_exceeded:
                 break

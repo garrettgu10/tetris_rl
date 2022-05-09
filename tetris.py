@@ -88,13 +88,21 @@ class Board(object):
         
         return sorted(list(res))
     
+    def add_cheese(self, nlines: int):
+        cheese = ([PieceColor.BLUE] * 9) + [PieceColor.EMPTY]
+        random.shuffle(cheese)
+        self.board = ([cheese for _ in range(nlines)] + self.board)[:40]
+    
     def is_empty(self):
         return all(self.board[y][x] == PieceColor.EMPTY for x in range(10) for y in range(40))
 
 PIECE_LIMIT = 200
 
 class Game(object):
-    def __init__(self, scorer = ModernScorer(), rand: random.Random = random.Random()):
+    def __init__(self, scorer = ModernScorer(), rand: random.Random = random.Random(), skip=False):
+        if skip:
+            return
+
         self.random = random
 
         self.board = Board()
@@ -116,11 +124,16 @@ class Game(object):
         self.lines_completed_by_last_move = 0
         self.last_move_was_tspin = False
 
-    def clone(self):
+    def clone(self, clone_board=True):
         rand = random.Random()
         rand.setstate(self.random.getstate())
-        clone = Game(self.scorer, rand)
-        clone.board = self.board.clone()
+        clone = Game(skip=True)
+        clone.scorer = self.scorer
+        clone.random = rand
+        if clone_board:
+            clone.board = self.board.clone()
+        else:
+            clone.board = self.board
         clone.bag = self.bag.copy()
         clone.curr_piece = self.curr_piece.clone()
         clone.curr_piece_x = self.curr_piece_x
@@ -284,7 +297,7 @@ class Game(object):
 
             self.set_curr_position(x, y, rotation)
 
-            for dx, dy in [(0, -1), (-1, 0), (1, 0)]:
+            for dx, dy in [(-1, 0), (1, 0)]:
                 if self.move(dx, dy):
                     queue.append((self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation))
                     self.set_curr_position(x, y, rotation)
@@ -293,8 +306,11 @@ class Game(object):
                 if self.rotate(move):
                     queue.append((self.curr_piece_x, self.curr_piece_y, self.curr_piece_rotation))
                     self.set_curr_position(x, y, rotation)
+
+            hard_drop_state = (*self.find_hard_drop_pos(), rotation)
             
-            res.add((*self.find_hard_drop_pos(), rotation))
+            res.add(hard_drop_state)
+            queue.append(hard_drop_state)
         
         # return game to original state
         self.set_curr_position(start_x, start_y, start_rotation)
@@ -319,3 +335,6 @@ class Game(object):
             for col in row:
                 print(PieceColor.ansi_code(PieceColor(col.value)) + "**", end=" ")
             print()
+    
+    def add_cheese(self, nlines: int):
+        self.board.add_cheese(nlines)

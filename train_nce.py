@@ -1,6 +1,7 @@
 from noisy_ce import NoisyCrossEntropyModel
+from heuristic import TetrisHeuristic
 
-model = NoisyCrossEntropyModel(N=100, rho=.1, noise_type='zero', verbose=True)
-model.train(games=30, episodes=100, max_pieces=500, num_processes=16)
-model.play_game()
+model = NoisyCrossEntropyModel(N=100, rho=.1, noise_type='zero', verbose=True, heuristic=TetrisHeuristic())
+model.train(games=10, episodes=1, max_pieces=20, num_processes=24)
 model.save('nce.pkl')
+model.play_game()

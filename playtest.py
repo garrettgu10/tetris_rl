@@ -1,9 +1,18 @@
 from tetris import Game
-from piece import Rotation
+from piece import PieceColor, Rotation
 from gym_env import game_to_observation
 from heuristic import AggregateHeightScorer, BumpinessScorer, CompleteLinesScorer, HolesScorer
 
 game = Game()
+game.board.board[0][0] = PieceColor.BLUE
+game.board.board[0][1] = PieceColor.BLUE
+game.board.board[1][0] = PieceColor.BLUE
+game.board.board[1][1] = PieceColor.BLUE
+game.board.board[1][2] = PieceColor.BLUE
+game.board.board[2][0] = PieceColor.BLUE
+game.board.board[2][1] = PieceColor.BLUE
+game.board.board[2][2] = PieceColor.BLUE
+game.board.board[2][3] = PieceColor.BLUE
 while not game.game_over:
     game.print_game_state()
     observation = game_to_observation(game)
@@ -14,8 +23,10 @@ while not game.game_over:
     print(BumpinessScorer().score(observation))
 
     for position in game.find_possible_positions():
-        game.set_curr_position(position[0], position[1], position[2])
-        game.print_game_state()
+        newgame = game.clone()
+        newgame.set_curr_position(position[0], position[1], position[2])
+        newgame.hard_drop()
+        newgame.print_game_state()
 
     cmd = input("Command: ")
     if cmd == "c":
