@@ -10,6 +10,11 @@ from typing import List, Set, Tuple
 class Board(object):
     def __init__(self):
         self.board = [[PieceColor.EMPTY] * 10 for _ in range(40)]
+    
+    def clone(self):
+        clone = Board()
+        clone.board = [row[:] for row in self.board]
+        return clone
 
     def check_collision(self, piece: Piece, x: int, y: int) -> bool:
         for point in piece.shape.points:
@@ -89,10 +94,8 @@ class Board(object):
 PIECE_LIMIT = 200
 
 class Game(object):
-    def __init__(self, scorer = ModernScorer(), seed = random.random()):
-        if seed == None:
-            seed = random.random()
-        self.random = random.Random(seed)
+    def __init__(self, scorer = ModernScorer(), rand: random.Random = random.Random()):
+        self.random = random
 
         self.board = Board()
         self.bag = deque()
@@ -110,7 +113,25 @@ class Game(object):
             scorer = ModernScorer()
         self.scorer = scorer
 
-        self.lines_completed_by_last_drop = 0
+        self.lines_completed_by_last_move = 0
+        self.last_move_was_tspin = False
+
+    def clone(self):
+        rand = random.Random()
+        rand.setstate(self.random.getstate())
+        clone = Game(self.scorer, rand)
+        clone.board = self.board.clone()
+        clone.bag = self.bag.copy()
+        clone.curr_piece = self.curr_piece.clone()
+        clone.curr_piece_x = self.curr_piece_x
+        clone.curr_piece_y = self.curr_piece_y
+        clone.curr_piece_rotation = self.curr_piece_rotation
+        clone.swap_piece = self.swap_piece
+        clone.can_swap = self.can_swap
+        clone.game_over = self.game_over
+        clone.remaining_pieces = self.remaining_pieces
+        clone.lines_completed_by_last_move = self.lines_completed_by_last_move
+        return clone
 
     def _refill_bag(self):
         while len(self.bag) <= len(DEFAULT_PIECES.keys()):
@@ -137,10 +158,15 @@ class Game(object):
         self.curr_piece_y = y
         self.curr_piece_rotation = orientation
         self.curr_piece = self.curr_piece.get_rotations()[orientation]
+        self.last_move_was_tspin = False
+        self.lines_completed_by_last_move = 0
     
     def rotate(self, rotation: Rotation) -> bool:
         if self.game_over:
             return False
+
+        self.last_move_was_tspin = False
+        self.lines_completed_by_last_move = 0
 
         wallkicks = get_wallkicks(self.curr_piece, rotation, self.curr_piece_rotation)
         
@@ -161,6 +187,9 @@ class Game(object):
         if self.game_over:
             return False
 
+        self.last_move_was_tspin = False
+        self.lines_completed_by_last_move = 0
+
         if not self.board.check_collision(self.curr_piece, self.curr_piece_x + dx, self.curr_piece_y + dy):
             self.curr_piece_x += dx
             self.curr_piece_y += dy
@@ -168,7 +197,7 @@ class Game(object):
         return False
     
     #must be done before freezing piece in place
-    def is_tspin(self):
+    def is_tspin(self) -> bool:
         curr_piece = self.curr_piece
 
         if curr_piece.name != "T":
@@ -190,13 +219,14 @@ class Game(object):
             pass
 
         is_tspin = self.is_tspin()
+        self.t_spin_last_drop = is_tspin
 
         self.board.freeze(self.curr_piece, self.curr_piece_x, self.curr_piece_y)
         lines_cleared = self.board.clear_lines()
         self._set_curr_piece(self._next_piece())
         self.can_swap = True
 
-        self.lines_completed_by_last_drop = lines_cleared
+        self.lines_completed_by_last_move = lines_cleared
 
         is_pclear = self.board.is_empty()
 
@@ -226,6 +256,9 @@ class Game(object):
             self._set_curr_piece(self._next_piece())
             self.can_swap = False
             return False
+
+        self.last_move_was_tspin = False
+        self.lines_completed_by_last_move = 0
         
         new_piece = self.swap_piece
         self.swap_piece = self.curr_piece.original_orientation
@@ -265,8 +298,6 @@ class Game(object):
         
         # return game to original state
         self.set_curr_position(start_x, start_y, start_rotation)
-        
-        print(res)
 
         return sorted(list(res), key=lambda x: (x[2], x[0], x[1]))
 

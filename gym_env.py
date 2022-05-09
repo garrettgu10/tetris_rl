@@ -5,6 +5,7 @@ from tetris import Game
 from piece import PieceColor, Rotation
 import numpy as np
 import pygame
+import random
 
 IDLE_REWARD = -0.1
 INVALID_MOVE_REWARD = -10
@@ -37,6 +38,7 @@ class TetrisEnv(Env):
                 "can_swap": spaces.Box(0, 1, (1,), dtype=int),
                 "upcoming_pieces": spaces.Box(1, 7, (4,), dtype=int),
                 "lines_completed": spaces.Discrete(10), #lines cleared by the last action
+                "last_move_was_tspin": spaces.Box(0, 1, (1,), dtype=int), #1 if the last move was a tspin
             }
         )
 
@@ -48,7 +50,7 @@ class TetrisEnv(Env):
         self.window_height = 480
 
     def reset(self, seed = None, return_info = False, options = None):
-        self.game = Game(Scorer(), seed=seed)
+        self.game = Game(Scorer(), rand=random.Random(seed))
         info = {}
         observation = game_to_observation(self.game)
 
@@ -147,5 +149,6 @@ def game_to_observation(game: Game):
         "piece_position": piece_position,
         "can_swap": can_swap,
         "upcoming_pieces": upcoming_pieces_array,
-        "lines_completed": game.lines_completed_by_last_drop,
+        "lines_completed": game.lines_completed_by_last_move,
+        "last_move_was_tspin": game.last_move_was_tspin,
     }

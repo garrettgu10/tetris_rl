@@ -37,7 +37,12 @@ class TetrisHeuristic():
             AggregateHeightScorer(),
             CompleteLinesScorer(),
             HolesScorer(),
+            HoleDisFactorScorer(),
+            HoleDisFactor2Scorer(),
             BumpinessScorer(),
+            MaxHeightScorer(),
+            TSpin3Scorer(),
+            DiffFactorScorer()
         ]
 
     def num_heuristics(self):
@@ -54,14 +59,14 @@ def columnHeight(board: spaces.Box, x: int) -> int:
             col_height = y + 1
     return col_height
 
-class BoardScorer(object):
+class StateScorer(object):
     def __init__(self) -> None:
         pass
 
     def score(self, state: spaces.Dict) -> float:
         raise NotImplementedError
 
-class AggregateHeightScorer(object):
+class AggregateHeightScorer(StateScorer):
     def __init__(self) -> None:
         pass
     
@@ -72,20 +77,25 @@ class AggregateHeightScorer(object):
             aggregate_height += columnHeight(board, x)
         return aggregate_height
 
-class CompleteLinesScorer(object):
+class CompleteLinesScorer(StateScorer):
     def __init__(self) -> None:
         pass
     
     def score(self, state: spaces.Dict) -> float:
         return state["lines_completed"]
 
-class HolesScorer(object):
+class WeightedHoleFactorScorer(StateScorer):
     def __init__(self) -> None:
         pass
+
+    def hole_weight(self, y: int, max_height: int) -> float:
+        raise NotImplementedError
 
     def score(self, state: spaces.Dict) -> float:
         board:spaces.Box = state["board"]
         holes = 0
+
+        max_height = max([columnHeight(board, x) for x in range(10)])
 
         for x in range(10):
             holes_in_col = 0
@@ -94,11 +104,34 @@ class HolesScorer(object):
                 if board[y][x] != 0:
                     start_counting = True
                 elif start_counting:
-                    holes_in_col += 1
+                    holes_in_col += self.hole_weight(y, max_height)
             holes += holes_in_col
         return holes
 
-class BumpinessScorer(object):
+class HolesScorer(WeightedHoleFactorScorer):
+    def __init__(self) -> None:
+        pass
+
+    def hole_weight(self, y: int, max_height: int) -> float:
+        return 1
+
+class HoleDisFactor2Scorer(WeightedHoleFactorScorer):
+    def hole_weight(self, y: int, max_height: int) -> float:
+        if y < 10:
+            return 1
+        elif y < 20:
+            return y / 10
+        else:
+            return 2
+
+class HoleDisFactorScorer(WeightedHoleFactorScorer):
+    def hole_weight(self, y: int, max_height: int) -> float:
+        if y <= max_height - 5:
+            return 0
+        c = y - (max_height - 5)
+        return y * c
+
+class BumpinessScorer(StateScorer):
     def __init__(self) -> None:
         pass
 
@@ -111,3 +144,61 @@ class BumpinessScorer(object):
             bumpiness += abs(heights[i] - heights[i - 1])
         
         return bumpiness
+
+class MaxHeightScorer(StateScorer):
+    def __init__(self) -> None:
+        pass
+
+    def score(self, state: spaces.Dict) -> float:
+        board:spaces.Box = state["board"]
+
+        return max([columnHeight(board, x) for x in range(10)])
+
+class TSpin3Scorer(StateScorer):
+    def __init__(self) -> None:
+        pass
+
+    def score(self, state: spaces.Dict) -> float:
+        return 1 if state["lines_completed"] == 3 and state["last_move_was_tspin"] else 0
+
+class HFactorScorer(StateScorer):
+    def __init__(self) -> None:
+        pass
+
+    def score(self, state: spaces.Dict) -> float:
+        board:spaces.Box = state["board"]
+        heights = [columnHeight(board, x) for x in range(10)]
+        
+        tallest_height_idx = heights.index(max(heights))
+
+        h_factor = 0
+        
+        if tallest_height_idx > 0:
+            h_factor += heights[tallest_height_idx - 1]
+        if tallest_height_idx < 9:
+            h_factor += heights[tallest_height_idx + 1]
+        
+        return h_factor
+
+class ClearUselessFactorScorer(StateScorer):
+    def __init__(self) -> None:
+        pass
+
+    def score(self, state: spaces.Dict) -> float:
+        board:spaces.Box = state["board"]
+
+        heights = [columnHeight(board, x) for x in range(10)]
+        avg_height = sum(heights) / 10.0
+
+        return state["lines_completed"] * (avg_height - 10)
+
+class DiffFactorScorer(StateScorer):
+    def __init__(self) -> None:
+        pass
+
+    def score(self, state: spaces.Dict) -> float:
+        board:spaces.Box = state["board"]
+        heights = [columnHeight(board, x) for x in range(10)]
+        avg_height = sum(heights) / 10.0
+
+        return sum([abs(heights[i] - avg_height) for i in range(10)])
