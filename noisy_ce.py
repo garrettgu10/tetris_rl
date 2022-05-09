@@ -78,10 +78,11 @@ class NoisyCrossEntropyModel():
             if self.verbose: 
                 print(f'Episode {episode} terminated after {timedelta(seconds=end-start)} seconds')
     
-    def play_game(self):
+    def play_game(self, num_pieces=100):
         weights = np.random.normal(self.mu, self.sd) 
-        score = simulate_game(weights, self.heuristic, render=True)
+        score = simulate_game(weights, self.heuristic, render=True, max_pieces=num_pieces)
         print('Game terminated with score', score)
+        return score
 
     def save(self, save_file):
         pickle.dump(self, open(save_file, "wb" ))

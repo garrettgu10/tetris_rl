@@ -1,13 +1,16 @@
 from collections import deque
+
 from tetris import Game
 from gym import spaces
 from typing import List
 from time import sleep
-from gym_env import game_to_observation
+from gym_env import game_to_observation, TetrisEnv
 
 def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
     game = Game()
     score = pieces = 0
+    gym_env = TetrisEnv()
+    gym_env.game = game
 
     while not game.game_over and pieces < max_pieces:
         best_pos, best_score = (0, 0, 0), -10e9
@@ -24,6 +27,7 @@ def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
         # game.add_cheese(1)
         if render: 
             game.print_game_state()
+            gym_env.render()
         pieces += 1
 
     return score

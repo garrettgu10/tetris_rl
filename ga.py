@@ -104,11 +104,12 @@ class GeneticAlgoModel():
                 print(f'Time taken: {timedelta(seconds=end-start)}')
 
 
-    def play_game(self):
+    def play_game(self, num_pieces=100):
         self.population.sort(key=lambda individual: individual.fitness)
         best_weights = self.population[-1].weights
-        score = simulate_game(best_weights, self.heuristic, render=True)
+        score = simulate_game(best_weights, self.heuristic, render=True, max_pieces=num_pieces)
         print('Game terminated with score', score)
+        return score
 
     def save(self, save_file):
         pickle.dump(self, open(save_file, "wb" ))
