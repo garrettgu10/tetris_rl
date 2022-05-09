@@ -21,7 +21,7 @@ def simulate_game(weight_vector, heuristic, max_pieces=10e9, render=False):
                 best_pos = position
         game.set_curr_position(best_pos[0], best_pos[1], best_pos[2])
         score += game.hard_drop()
-        game.add_cheese(1)
+        # game.add_cheese(1)
         if render: 
             game.print_game_state()
         pieces += 1
