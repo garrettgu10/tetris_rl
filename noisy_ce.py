@@ -43,7 +43,7 @@ class NoisyCrossEntropyModel():
                 assert len(weight_vector) == len(population[weight_idx].weights)
                 population[weight_idx].weights = weight_vector 
             assert all(map(lambda x: x.fitness < 0, population))
-            
+
             args = SimArgs(num_games=games, max_pieces=max_pieces, heuristic=self.heuristic)
             chromosomes, modified = prep_sim(population, num_processes)
             processes = start_processes(num_processes, process_function, (chromosomes, modified, args))
@@ -70,7 +70,8 @@ class NoisyCrossEntropyModel():
             weights = [np.random.normal(self.mu, self.sd) for _ in range(self.N)]
             selected = self.calc_selected(games, weights, max_pieces, num_processes)
             self.mu = np.mean(selected, axis=0)
-            self.sd = np.mean(np.power(selected - self.mu, 2), axis=0) + self._noise(episode)
+            variance = np.mean(np.power(selected - self.mu, 2), axis=0) + self._noise(episode)
+            self.sd = np.power(variance, .5)
             end = time.time()
             assert len(self.mu) == self.heuristic.num_heuristics()
             assert len(self.sd) == self.heuristic.num_heuristics()
