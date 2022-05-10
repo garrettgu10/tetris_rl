@@ -6,6 +6,12 @@ from process_util import prep_sim, start_processes, end_processes, process_funct
 import time
 from datetime import timedelta
 
+'''
+    We wrote this code ourselves. But it's based on a blog post called
+    "Tetris AI - The (Near) Perfect Bot"
+    by Yiyuan Lee. See our paper for a full citation.
+'''
+
 class Individual():
     def __init__(self, num_weights) -> None:
         self.weights = 2 * rand.random(num_weights) - 1
